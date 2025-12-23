@@ -5,7 +5,7 @@ import { LucideIcon, X, ChevronLeft, ChevronRight, Menu, ChevronDown, Grid3x3 } 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { GenericMenuItem, MenuPickerCategory, MenuPickerSheet } from '.';
+import { MenuPickerSheet, type GenericMenuItem, type MenuPickerCategory } from './MenuPickerDialog';
 
 // ==================== TYPES ====================
 
@@ -26,6 +26,8 @@ export interface AppShellMenuItem {
   isActive?: (pathname: string) => boolean;
   /** Category/group this item belongs to */
   category?: string;
+  /** Display order in sidebar (lower number = higher priority) */
+  order?: number;
 }
 
 export interface AppShellMenuGroup {
@@ -379,17 +381,36 @@ function AppShellSidebar({
   // Determine which menu items to display
   // If useMenuPicker is false, show all menus
   // If pinnedMenuIds is provided, filter menuItems or allMenuItems by pinned IDs
+  // Sort by order field (from menuConfig) or preserve pinned order
   const displayMenuItems = useMemo(() => {
+    let items: (AppShellMenuItem | GenericMenuItem)[] = [];
+    
     if (!useMenuPicker && allMenuItems.length > 0) {
       // Show all menus when menu picker is disabled
-      return allMenuItems;
-    }
-    if (pinnedMenuIds.length > 0 && allMenuItems.length > 0) {
+      items = allMenuItems;
+    } else if (pinnedMenuIds.length > 0 && allMenuItems.length > 0) {
       // Show only pinned menus from allMenuItems
-      return allMenuItems.filter((item) => pinnedMenuIds.includes(item.id));
+      items = allMenuItems.filter((item) => pinnedMenuIds.includes(item.id));
+    } else {
+      // Fallback to regular menuItems
+      items = menuItems || [];
     }
-    // Fallback to regular menuItems
-    return menuItems || [];
+    
+    // Sort by order field (lower number = higher priority)
+    // If order is not defined, maintain original array order
+    return [...items].sort((a, b) => {
+      const orderA = (a as AppShellMenuItem).order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = (b as AppShellMenuItem).order ?? Number.MAX_SAFE_INTEGER;
+      
+      if (orderA === orderB) {
+        // If orders are equal, preserve the original position in pinnedMenuIds
+        const indexA = pinnedMenuIds.indexOf(a.id);
+        const indexB = pinnedMenuIds.indexOf(b.id);
+        return indexA - indexB;
+      }
+      
+      return orderA - orderB;
+    });
   }, [menuItems, allMenuItems, pinnedMenuIds, useMenuPicker]);
 
   // Track which groups are open (only used when not collapsed)
@@ -478,7 +499,7 @@ function AppShellSidebar({
         {!collapsed && (
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-base font-semibold truncate">{brandName}</span>
-            <span className="text-xs text-muted-foreground truncate">Business Platform</span>
+            <span className="text-xs text-muted-foreground truncate">HRMS Platform</span>
           </div>
         )}
         

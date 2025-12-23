@@ -1,6 +1,6 @@
 /**
  * Menu Configuration
- * 
+ *
  * This file defines all available menu items and their categories for the AppShell component.
  * Customize this file to match your application's navigation structure.
  */
@@ -21,9 +21,9 @@ import {
   ListTodo,
   MessageSquare,
   Layers,
-} from 'lucide-react';
-import type { AppShellMenuItem } from '@/components/AppShell';
-import type { MenuPickerCategory } from '@/components/AppShell/MenuPickerDialog';
+} from "lucide-react";
+import type { AppShellMenuItem } from "@/components/AppShell";
+import type { MenuPickerCategory } from "@/components/AppShell/MenuPickerDialog";
 
 /**
  * All available menu items in the application
@@ -38,121 +38,136 @@ import type { MenuPickerCategory } from '@/components/AppShell/MenuPickerDialog'
 export const getAllMenuItems = (): AppShellMenuItem[] => [
   // Overview
   {
-    id: 'dashboard',
-    to: '/dashboard',
+    id: "dashboard",
+    to: "/dashboard",
     icon: LayoutDashboard,
-    label: 'Dashboard',
-    category: 'overview',
+    label: "Dashboard",
+    category: "overview",
+    order: 15,
   },
   {
-    id: 'analytics',
-    to: '/analytics',
+    id: "analytics",
+    to: "/analytics",
     icon: BarChart3,
-    label: 'Analytics',
-    category: 'overview',
+    label: "Analytics",
+    category: "overview",
+    order: 2,
   },
   {
-    id: 'reports',
-    to: '/reports',
+    id: "reports",
+    to: "/reports",
     icon: FileText,
-    label: 'Reports',
-    category: 'overview',
+    label: "Reports",
+    category: "overview",
+    order: 3,
   },
 
   // Content Management
   {
-    id: 'items',
-    to: '/items',
+    id: "items",
+    to: "/items",
     icon: Package,
-    label: 'Items',
-    category: 'content',
+    label: "Items",
+    category: "content",
+    order: 4,
   },
   {
-    id: 'projects',
-    to: '/projects',
+    id: "projects",
+    to: "/projects",
     icon: FolderOpen,
-    label: 'Projects',
-    category: 'content',
+    label: "Projects",
+    category: "content",
+    order: 5,
   },
   {
-    id: 'tasks',
-    to: '/tasks',
+    id: "tasks",
+    to: "/tasks",
     icon: ListTodo,
-    label: 'Tasks',
-    category: 'content',
+    label: "Tasks",
+    category: "content",
+    order: 6,
   },
   {
-    id: 'calendar',
-    to: '/calendar',
+    id: "calendar",
+    to: "/calendar",
     icon: Calendar,
-    label: 'Calendar',
-    category: 'content',
+    label: "Calendar",
+    category: "content",
+    order: 7,
   },
 
   // Collaboration
   {
-    id: 'messages',
-    to: '/messages',
+    id: "messages",
+    to: "/messages",
     icon: MessageSquare,
-    label: 'Messages',
-    category: 'collaboration',
+    label: "Messages",
+    category: "collaboration",
+    order: 8,
   },
   {
-    id: 'team',
-    to: '/team',
+    id: "team",
+    to: "/team",
     icon: Users,
-    label: 'Team',
-    category: 'collaboration',
+    label: "Team",
+    category: "collaboration",
+    order: 9,
   },
 
   // Commerce
   {
-    id: 'orders',
-    to: '/orders',
+    id: "orders",
+    to: "/orders",
     icon: ShoppingCart,
-    label: 'Orders',
-    category: 'commerce',
+    label: "Orders",
+    category: "commerce",
+    order: 10,
   },
   {
-    id: 'inbox',
-    to: '/inbox',
+    id: "inbox",
+    to: "/inbox",
     icon: Inbox,
-    label: 'Inbox',
-    category: 'commerce',
+    label: "Inbox",
+    category: "commerce",
+    order: 11,
   },
 
   // System
   {
-    id: 'settings',
-    to: '/settings',
+    id: "settings",
+    to: "/settings",
     icon: Settings,
-    label: 'Settings',
-    category: 'system',
+    label: "Settings",
+    category: "system",
+    order: 12,
   },
   {
-    id: 'integrations',
-    to: '/integrations',
+    id: "integrations",
+    to: "/integrations",
     icon: Layers,
-    label: 'Integrations',
-    category: 'system',
+    label: "Integrations",
+    category: "system",
+    order: 13,
   },
 
   // Support
   {
-    id: 'support',
-    to: '/support',
+    id: "support",
+    to: "/support",
     icon: HelpCircle,
-    label: 'Support',
-    category: 'support',
+    label: "Support",
+    category: "support",
+    order: 14,
   },
 
   // Account
   {
-    id: 'profile',
-    to: '/account/profile',
+    id: "profile",
+    to: "/account/profile",
     icon: User,
-    label: 'My Profile',
-    category: 'account',
+    label: "My Profile",
+    category: "account",
+    order: 15,
   },
 ];
 
@@ -161,38 +176,38 @@ export const getAllMenuItems = (): AppShellMenuItem[] => [
  */
 export const menuCategories: MenuPickerCategory[] = [
   {
-    id: 'overview',
-    label: 'Overview',
+    id: "overview",
+    label: "Overview",
     icon: LayoutDashboard,
   },
   {
-    id: 'content',
-    label: 'Content Management',
+    id: "content",
+    label: "Content Management",
     icon: FolderOpen,
   },
   {
-    id: 'collaboration',
-    label: 'Collaboration',
+    id: "collaboration",
+    label: "Collaboration",
     icon: Users,
   },
   {
-    id: 'commerce',
-    label: 'Commerce',
+    id: "commerce",
+    label: "Commerce",
     icon: ShoppingCart,
   },
   {
-    id: 'system',
-    label: 'System',
+    id: "system",
+    label: "System",
     icon: Settings,
   },
   {
-    id: 'support',
-    label: 'Support',
+    id: "support",
+    label: "Support",
     icon: HelpCircle,
   },
   {
-    id: 'account',
-    label: 'My Account',
+    id: "account",
+    label: "My Account",
     icon: User,
   },
 ];
