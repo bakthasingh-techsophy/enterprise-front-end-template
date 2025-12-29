@@ -1,9 +1,11 @@
-import { useState, useEffect, ReactNode } from 'react';
+import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LucideIcon, X, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { LucideIcon, X, ChevronLeft, ChevronRight, Menu, ChevronDown, Grid3x3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { MenuPickerSheet, type GenericMenuItem, type MenuPickerCategory } from './MenuPickerDialog';
 
 // ==================== TYPES ====================
 
@@ -11,7 +13,7 @@ export interface AppShellMenuItem {
   /** Unique identifier for the menu item */
   id: string;
   /** Navigation path/route */
-  to: string;
+  to?: string;
   /** Icon component from lucide-react */
   icon: LucideIcon;
   /** Display label */
@@ -22,11 +24,38 @@ export interface AppShellMenuItem {
   exact?: boolean;
   /** Custom active check (optional) */
   isActive?: (pathname: string) => boolean;
+  /** Category/group this item belongs to */
+  category?: string;
+  /** Display order in sidebar (lower number = higher priority) */
+  order?: number;
+}
+
+export interface AppShellMenuGroup {
+  /** Unique identifier for the group */
+  id: string;
+  /** Group display label */
+  label: string;
+  /** Icon component from lucide-react */
+  icon?: LucideIcon;
+  /** Menu items in this group */
+  items: AppShellMenuItem[];
+  /** Default open state */
+  defaultOpen?: boolean;
 }
 
 export interface AppShellProps {
-  /** Menu items for sidebar navigation */
-  menuItems: AppShellMenuItem[];
+  /** Menu items for sidebar navigation (flat list) */
+  menuItems?: AppShellMenuItem[];
+  /** All available menu items (for menu picker) */
+  allMenuItems?: GenericMenuItem[];
+  /** Pinned menu IDs (user's customized sidebar) */
+  pinnedMenuIds?: string[];
+  /** Callback when menu is pinned/unpinned */
+  onTogglePin?: (menuId: string, isPinned: boolean) => void;
+  /** Grouped menu items for sidebar navigation (legacy, deprecated) */
+  menuGroups?: AppShellMenuGroup[];
+  /** Menu categories for picker dialog */
+  menuCategories?: MenuPickerCategory[];
   /** Header/toolbar content (custom components) */
   headerContent?: ReactNode;
   /** Brand logo component */
@@ -59,6 +88,12 @@ export interface AppShellProps {
   showCollapseButton?: boolean;
   /** Custom render for menu item */
   renderMenuItem?: (item: AppShellMenuItem, isActive: boolean, collapsed: boolean) => ReactNode;
+  /** Sheet animation duration in milliseconds (default: 200) */
+  sheetAnimationDuration?: number;
+  /** Sheet position: 'left' | 'right' | 'top' | 'bottom' (default: 'right') */
+  sheetPosition?: 'left' | 'right' | 'top' | 'bottom';
+  /** Use menu picker sheet (if false, shows all menus in sidebar) (default: true) */
+  useMenuPicker?: boolean;
 }
 
 // ==================== HOOKS ====================
@@ -96,6 +131,11 @@ function useIsLarge() {
 
 export function AppShell({
   menuItems,
+  allMenuItems = [],
+  pinnedMenuIds = [],
+  onTogglePin,
+  menuGroups,
+  menuCategories = [],
   headerContent,
   logo,
   brandName = 'App',
@@ -114,9 +154,15 @@ export function AppShell({
   onMobileClose,
   showCollapseButton = true,
   renderMenuItem,
+  sheetAnimationDuration = 200,
+  sheetPosition = 'right',
+  useMenuPicker = true,
 }: AppShellProps) {
   const location = useLocation();
   const isLarge = useIsLarge();
+
+  // Menu picker dialog state
+  const [menuPickerOpen, setMenuPickerOpen] = useState(false);
 
   // Internal state for collapse (if not controlled)
   const [internalCollapsed, setInternalCollapsed] = useState(() => {
@@ -206,15 +252,20 @@ export function AppShell({
         {/* Pass all props to AppShellSidebar sub-component */}
         <AppShellSidebar
           menuItems={menuItems}
+          allMenuItems={allMenuItems}
+          pinnedMenuIds={pinnedMenuIds}
+          menuGroups={menuGroups}
           collapsed={collapsed}
           logo={logo}
           brandName={brandName}
           onToggleSidebar={handleToggleSidebar}
           onCloseMobileMenu={handleCloseMobileMenu}
+          onOpenMenuPicker={() => setMenuPickerOpen(true)}
           showCollapseButton={showCollapseButton}
           renderMenuItem={renderMenuItem}
           onNavigate={onNavigate}
           location={location}
+          useMenuPicker={useMenuPicker}
         />
       </motion.aside>
 
@@ -268,6 +319,24 @@ export function AppShell({
           />
         )}
       </AnimatePresence>
+
+      {/* Menu Picker Sheet */}
+      {useMenuPicker && (
+        <MenuPickerSheet
+          open={menuPickerOpen}
+          onOpenChange={setMenuPickerOpen}
+          allMenuItems={allMenuItems}
+          pinnedMenuIds={pinnedMenuIds}
+          onTogglePin={onTogglePin || (() => {})}
+          categories={menuCategories}
+          title="All Menus"
+          description="Click menu to navigate, click pin icon to add to sidebar"
+          searchPlaceholder="Search menus..."
+          animationDuration={sheetAnimationDuration}
+          sheetPosition={sheetPosition}
+          onMenuClick={onNavigate}
+        />
+      )}
     </div>
   );
 }
@@ -275,116 +344,273 @@ export function AppShell({
 // ==================== SUB-COMPONENTS ====================
 
 interface AppShellSidebarProps {
-  menuItems: AppShellMenuItem[];
+  menuItems?: AppShellMenuItem[];
+  allMenuItems?: GenericMenuItem[];
+  pinnedMenuIds?: string[];
+  menuGroups?: AppShellMenuGroup[];
   collapsed: boolean;
   logo?: ReactNode;
   brandName: string;
   onToggleSidebar: () => void;
   onCloseMobileMenu: () => void;
+  onOpenMenuPicker: () => void;
   showCollapseButton: boolean;
   renderMenuItem?: AppShellProps['renderMenuItem'];
   onNavigate?: AppShellProps['onNavigate'];
   location: ReturnType<typeof useLocation>;
+  useMenuPicker: boolean;
 }
 
 function AppShellSidebar({
   menuItems,
+  allMenuItems = [],
+  pinnedMenuIds = [],
+  menuGroups,
   collapsed,
   logo,
   brandName,
   onToggleSidebar,
   onCloseMobileMenu,
+  onOpenMenuPicker,
   showCollapseButton,
   renderMenuItem,
   onNavigate,
   location,
+  useMenuPicker,
 }: AppShellSidebarProps) {
+  // Determine which menu items to display
+  // If useMenuPicker is false, show all menus
+  // If pinnedMenuIds is provided, filter menuItems or allMenuItems by pinned IDs
+  // Sort by order field (from menuConfig) or preserve pinned order
+  const displayMenuItems = useMemo(() => {
+    let items: (AppShellMenuItem | GenericMenuItem)[] = [];
+    
+    if (!useMenuPicker && allMenuItems.length > 0) {
+      // Show all menus when menu picker is disabled
+      items = allMenuItems;
+    } else if (pinnedMenuIds.length > 0 && allMenuItems.length > 0) {
+      // Show only pinned menus from allMenuItems
+      items = allMenuItems.filter((item) => pinnedMenuIds.includes(item.id));
+    } else {
+      // Fallback to regular menuItems
+      items = menuItems || [];
+    }
+    
+    // Sort by order field (lower number = higher priority)
+    // If order is not defined, maintain original array order
+    return [...items].sort((a, b) => {
+      const orderA = (a as AppShellMenuItem).order ?? Number.MAX_SAFE_INTEGER;
+      const orderB = (b as AppShellMenuItem).order ?? Number.MAX_SAFE_INTEGER;
+      
+      if (orderA === orderB) {
+        // If orders are equal, preserve the original position in pinnedMenuIds
+        const indexA = pinnedMenuIds.indexOf(a.id);
+        const indexB = pinnedMenuIds.indexOf(b.id);
+        return indexA - indexB;
+      }
+      
+      return orderA - orderB;
+    });
+  }, [menuItems, allMenuItems, pinnedMenuIds, useMenuPicker]);
+
+  // Track which groups are open (only used when not collapsed)
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
+    const initialOpen = new Set<string>();
+    if (menuGroups) {
+      menuGroups.forEach((group) => {
+        if (group.defaultOpen !== false) {
+          initialOpen.add(group.id);
+        }
+      });
+    }
+    return initialOpen;
+  });
+
+  const toggleGroup = (groupId: string) => {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupId)) {
+        next.delete(groupId);
+      } else {
+        next.add(groupId);
+      }
+      return next;
+    });
+  };
+
+  // Helper to check if an item is active
+  const isItemActive = (item: AppShellMenuItem | GenericMenuItem) => {
+    if (!item.to) return false;
+    const pathBase = location.pathname.replace(/^\//g, '').split('/')[0];
+    return item.isActive
+      ? item.isActive(location.pathname)
+      : item.exact
+      ? location.pathname === item.to
+      : location.pathname.startsWith(item.to) || pathBase === item.to.replace(/^\//g, '');
+  };
+
+  // Render a single menu item
+  const renderItem = (item: AppShellMenuItem | GenericMenuItem, isActive: boolean) => {
+    if (renderMenuItem && 'to' in item && item.to) {
+      return renderMenuItem(item as AppShellMenuItem, isActive, collapsed);
+    }
+
+    return (
+      <Button
+        key={item.id}
+        variant={isActive ? 'default' : 'ghost'}
+        className={cn(
+          'w-full justify-start gap-3 h-9 px-3',
+          isActive && 'shadow-sm',
+          !collapsed && 'text-sm font-normal'
+        )}
+        onClick={() => {
+          onCloseMobileMenu();
+          onNavigate?.(item);
+        }}
+      >
+        <item.icon className="h-4 w-4 flex-shrink-0" />
+        {!collapsed && <span className="truncate text-left flex-1">{item.label}</span>}
+      </Button>
+    );
+  };
 
   return (
     <div className="flex h-full flex-col">
       {/* Sidebar Header */}
-      <div className="flex h-16 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-3 min-w-0">
-          {logo && <div className="flex-shrink-0">{logo}</div>}
-          {!collapsed && (
-            <span className="text-lg font-semibold truncate overflow-hidden">
-              {brandName}
-            </span>
-          )}
-        </div>
-        {/* Close button for mobile */}
+      <div className="flex h-16 items-center gap-2 border-b px-3">
+        {/* Menu Picker Icon - Left side */}
+        {useMenuPicker && !collapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenMenuPicker}
+            className="flex-shrink-0 h-9 w-9"
+            title="More menus"
+          >
+            <Grid3x3 className="h-4 w-4" />
+          </Button>
+        )}
+        
+        {/* Logo - Always show when present */}
+        {logo && <div className="flex-shrink-0">{logo}</div>}
+        
+        {/* Brand Name */}
+        {!collapsed && (
+          <div className="flex flex-col min-w-0 flex-1">
+            <span className="text-base font-semibold truncate">{brandName}</span>
+            <span className="text-xs text-muted-foreground truncate">HRMS Platform</span>
+          </div>
+        )}
+        
+        {/* Mobile Close Button */}
         <Button
           variant="ghost"
           size="icon"
           onClick={onCloseMobileMenu}
-          className="lg:hidden flex-shrink-0"
-          aria-label="Close menu"
+          className="lg:hidden flex-shrink-0 h-9 w-9"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </Button>
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 space-y-1 p-3 overflow-y-auto overscroll-contain">
-        {menuItems.map((item) => {
-          // Check permission
-          if (item.permission && !item.permission()) {
-            return null;
-          }
+      <nav className="flex-1 p-2 overflow-y-auto overscroll-contain custom-scrollbar">
+        {/* Pinned/Flat Menu Items (New Outlook-style approach) */}
+        {displayMenuItems.length > 0 ? (
+          <div className="space-y-1">
+            {displayMenuItems.map((item) => {
+              // Check permission
+              if (item.permission && !item.permission()) {
+                return null;
+              }
 
-          // Determine if active
-          const pathBase = location.pathname.replace(/^\//, '').split('/')[0];
-          const isActive = item.isActive
-            ? item.isActive(location.pathname)
-            : item.exact
-            ? location.pathname === item.to
-            : location.pathname.startsWith(item.to) || pathBase === item.to.replace(/^\//, '');
+              const isActive = isItemActive(item);
+              return <div key={item.id}>{renderItem(item, isActive)}</div>;
+            })}
+          </div>
+        ) : /* Legacy: Grouped Menu Items (backward compatibility) */
+        menuGroups && menuGroups.length > 0 ? (
+          <div className="space-y-1">
+            {menuGroups.map((group) => {
+              // Filter items by permission
+              const visibleItems = group.items.filter(
+                (item) => !item.permission || item.permission()
+              );
 
-          // Custom render or default
-          if (renderMenuItem) {
-            return renderMenuItem(item, isActive, collapsed);
-          }
+              if (visibleItems.length === 0) return null;
 
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                onCloseMobileMenu();
-                onNavigate?.(item);
-              }}
-              className={cn(
-                'w-full flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors',
-                'hover:bg-accent hover:text-accent-foreground',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                'min-h-[44px]',
-                isActive ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
-              )}
-            >
-              <item.icon className="h-5 w-5 flex-shrink-0" />
-              {!collapsed && (
-                <span className="truncate overflow-hidden">{item.label}</span>
-              )}
-            </button>
-          );
-        })}
+              const isOpen = openGroups.has(group.id);
+              const hasActiveItem = visibleItems.some((item) => isItemActive(item));
+
+              // When collapsed, show items without grouping
+              if (collapsed) {
+                return (
+                  <div key={group.id} className="space-y-1">
+                    {visibleItems.map((item) => {
+                      const isActive = isItemActive(item);
+                      return <div key={item.id}>{renderItem(item, isActive)}</div>;
+                    })}
+                  </div>
+                );
+              }
+
+              // When expanded, show collapsible groups
+              return (
+                <Collapsible
+                  key={group.id}
+                  open={isOpen}
+                  onOpenChange={() => toggleGroup(group.id)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        'w-full justify-start gap-3 h-10 px-3 font-semibold text-sm',
+                        'hover:bg-accent/50',
+                        hasActiveItem && 'text-primary bg-accent/30'
+                      )}
+                    >
+                      {group.icon && <group.icon className="h-4 w-4 flex-shrink-0" />}
+                      <span className="truncate text-left flex-1">{group.label}</span>
+                      <ChevronDown
+                        className={cn(
+                          'h-4 w-4 flex-shrink-0 transition-transform duration-200',
+                          isOpen && 'rotate-180'
+                        )}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-1 space-y-1">
+                    <div className="ml-2 space-y-1 border-l-2 border-border pl-2">
+                      {visibleItems.map((item) => {
+                        const isActive = isItemActive(item);
+                        return <div key={item.id}>{renderItem(item, isActive)}</div>;
+                      })}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+          </div>
+        ) : null}
       </nav>
 
       {/* Collapse Button (Desktop Only) */}
       {showCollapseButton && (
-        <div className="p-3 hidden lg:block">
+        <div className="p-2 hidden lg:block border-t">
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleSidebar}
-            className="w-full justify-center min-h-[44px]"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="w-full justify-start gap-2 h-9 px-2"
           >
             {collapsed ? (
-              <ChevronRight className="h-5 w-5" />
+              <ChevronRight className="h-4 w-4" />
             ) : (
               <>
-                <ChevronLeft className="h-5 w-5" />
-                <span className="ml-2 overflow-hidden">Collapse</span>
+                <ChevronLeft className="h-4 w-4" />
+                <span className="text-xs">Collapse</span>
               </>
             )}
           </Button>

@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { LayoutWithAppShell } from './components/AppShell';
+import { LayoutWithAppShell } from './layout/LayoutWithAppShell';
 import { RequireAuth } from './components/RequireAuth';
 import { Toaster } from './components/ui/toaster';
 import { AuthProvider } from './contexts/AuthContext';
@@ -13,6 +13,17 @@ import { ForgotPassword } from './modules/auth/ForgotPassword';
 
 // Main application modules
 import { Dashboard } from './modules/dashboard/Dashboard';
+import { Analytics } from './modules/analytics/Analytics';
+import { Reports } from './modules/reports/Reports';
+import { Items } from './modules/items/Items';
+import { Projects } from './modules/projects/Projects';
+import { Tasks } from './modules/tasks/Tasks';
+import { Calendar } from './modules/calendar/Calendar';
+import { Messages } from './modules/messages/Messages';
+import { Team } from './modules/team/Team';
+import { Orders } from './modules/orders/Orders';
+import { Inbox } from './modules/inbox/Inbox';
+import { Integrations } from './modules/integrations/Integrations';
 import { Settings } from './modules/settings/Settings';
 import { Support } from './modules/support/Support';
 
@@ -42,7 +53,26 @@ function App() {
               >
                 {/* Main application routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/reports" element={<Reports />} />
+                
+                {/* Content Management */}
+                <Route path="/items" element={<Items />} />
+                <Route path="/projects" element={<Projects />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/calendar" element={<Calendar />} />
+                
+                {/* Collaboration */}
+                <Route path="/messages" element={<Messages />} />
+                <Route path="/team" element={<Team />} />
+                
+                {/* Commerce */}
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/inbox" element={<Inbox />} />
+                
+                {/* System */}
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/integrations" element={<Integrations />} />
                 <Route path="/support" element={<Support />} />
 
                 {/* Account routes */}
