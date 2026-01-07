@@ -24,6 +24,38 @@ export interface PageLayoutProps {
   bottomPadding?: string;
 }
 
+/**
+ * PageLayout - A reusable page layout component with toolbar and scroll-to-top functionality
+ * 
+ * Features:
+ * - Configurable toolbar at the top
+ * - Main content area with customizable padding
+ * - Scroll-to-top button with auto-show/hide
+ * - Empty state support
+ * - Responsive design
+ * 
+ * @example
+ * ```tsx
+ * <PageLayout
+ *   toolbar={
+ *     <GenericToolbar
+ *       searchValue={searchTerm}
+ *       onSearchChange={setSearchTerm}
+ *       // ... other toolbar props
+ *     />
+ *   }
+ *   showEmptyState={!selectedStudioScope}
+ *   emptyState={
+ *     <EmptyState
+ *       title="Please select a studio"
+ *       description="You need to select a studio to view content"
+ *     />
+ *   }
+ * >
+ *   <YourTableComponent />
+ * </PageLayout>
+ * ```
+ */
 export function PageLayout({
   toolbar,
   children,

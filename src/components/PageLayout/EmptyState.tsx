@@ -14,6 +14,19 @@ export interface EmptyStateProps {
   className?: string;
 }
 
+/**
+ * EmptyState - A reusable component for displaying empty states
+ * 
+ * @example
+ * ```tsx
+ * <EmptyState
+ *   icon={<Building2 className="h-12 w-12 text-muted-foreground" />}
+ *   title="No studio selected"
+ *   description="Please select a studio from the studio selector"
+ *   action={<Button onClick={openStudioSelector}>Select Studio</Button>}
+ * />
+ * ```
+ */
 export function EmptyState({
   icon,
   title,
